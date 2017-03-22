@@ -7,13 +7,20 @@
     android:layout_height="match_parent"
     tools:context="com.shtainyky.speedometer.MainActivity">
 
-    <TextView
+    <com.shtainyky.speedometer.SpeedometerView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Hello World!"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent"/>
+        app:outerSectorRadius="650"
+        app:innerSectorRadius="150"
+        app:colorAfterSpeedLine="@color/colorPrimary"
+        app:colorBeforeSpeedLine="@color/colorAccent"
+        app:speedArrowRadius="200"
+        app:colorMainBoder="@color/black"
+        app:digitsColor="@android:color/black"
+        app:backgroundColor="@color/grey"
+        app:colorSpeedLine="@color/black"
+        app:maxSpeed="80"
+        app:currentSpeed="30"
+        />
 
 </android.support.constraint.ConstraintLayout>
