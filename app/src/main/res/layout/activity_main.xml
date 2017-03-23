@@ -8,19 +8,20 @@
     tools:context="com.shtainyky.speedometer.MainActivity">
 
     <com.shtainyky.speedometer.SpeedometerView
+        android:id="@+id/speedometer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:outerSectorRadius="650"
+        app:outerSectorRadius="350"
         app:innerSectorRadius="150"
         app:colorAfterSpeedLine="@color/colorPrimary"
         app:colorBeforeSpeedLine="@color/colorAccent"
-        app:speedArrowRadius="200"
+        app:speedArrowRadius="250"
         app:colorMainBoder="@color/black"
         app:digitsColor="@android:color/black"
         app:backgroundColor="@color/grey"
         app:colorSpeedLine="@color/black"
-        app:maxSpeed="80"
-        app:currentSpeed="30"
-        />
+        app:maxSpeed="100"
+        app:currentSpeed="10"
+       />
 
 </android.support.constraint.ConstraintLayout>

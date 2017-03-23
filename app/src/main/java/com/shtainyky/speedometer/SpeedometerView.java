@@ -13,11 +13,9 @@ import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Typeface;
-import android.graphics.drawable.Drawable;
 import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 
@@ -122,34 +120,79 @@ public class SpeedometerView extends View {
         b = BitmapFactory.decodeResource(getResources(), R.drawable.ic_oil);
     }
 
-//    @Override
-//    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-//        int widthMode = MeasureSpec.getMode(widthMeasureSpec);
-//        int widthSize = MeasureSpec.getSize(widthMeasureSpec);
-//        int heightMode = MeasureSpec.getMode(heightMeasureSpec);
-//        int heightSize = MeasureSpec.getSize(heightMeasureSpec);
-////        if (widthMode == MeasureSpec.EXACTLY) {
-////            radiusL = widthSize;
-////        } else if (widthMode == MeasureSpec.AT_MOST) {
-////            radiusL = Math.min(radiusL, widthSize);
-////        } else {
-////            radiusL = desiredWidth;
-////        }
-//    }
+    public float getCurrentSpeed() {
+        return currentSpeed;
+    }
+
+    public void setCurrentSpeed(int currentSpeed) {
+        if (currentSpeed > this.maxSpeed)
+            this.currentSpeed = maxSpeed;
+        else if (currentSpeed < 0)
+            this.currentSpeed = 0;
+        else
+            this.currentSpeed = currentSpeed;
+        invalidate();
+
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        int widthMode = MeasureSpec.getMode(widthMeasureSpec);
+        int widthSize = MeasureSpec.getSize(widthMeasureSpec);
+        int heightMode = MeasureSpec.getMode(heightMeasureSpec);
+        int heightSize = MeasureSpec.getSize(heightMeasureSpec);
+
+        int width;
+        int height;
+
+        //Measure Width
+        if (widthMode == MeasureSpec.EXACTLY || widthMode == MeasureSpec.AT_MOST) {
+            //Must be this size
+            width = widthSize;
+        } else {
+            width = -1;
+        }
+
+        //Measure Height
+        if (heightMode == MeasureSpec.EXACTLY || heightMode == MeasureSpec.AT_MOST) {
+            //Must be this size
+            height = heightSize;
+        } else {
+            height = -1;
+        }
+
+        if (height >= 0 && width >= 0) {
+            width = Math.min(height, width);
+            height = width / 2;
+        } else if (width >= 0) {
+            height = width / 2;
+        } else if (height >= 0) {
+            width = height * 2;
+        } else {
+            width = 0;
+            height = 0;
+        }
+
+        //MUST CALL THIS
+        setMeasuredDimension(width, height);
+    }
+
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        initRightRadius();
+    }
 
     @Override
     protected void onDraw(Canvas canvas) {
         Log.d("myLog", "SpeedometerView onDraw");
-        initRightRadius();
         fillBackgroundColor(canvas);
         drawMainBorder(canvas);
-
-        int degreesRotate = 180 * maxSpeed / 100; //depends of max speed
-        angleSpeed = degreesRotate * currentSpeed / maxSpeed ;
-        Log.d("myLog", "angleSpeed = " + angleSpeed);
-
-        drawSpeedArc(canvas);
         drawDigitsForSpeed(canvas);
+
+        calculateAngleSpeed();
+        drawSpeedArc(canvas);
         drawSpeedArrow(canvas);
 
         //draw oil image
@@ -158,8 +201,15 @@ public class SpeedometerView extends View {
         canvas.drawBitmap(b, center_x - b.getWidth(), center_y - 6 * radiusM / 4, paint);
     }
 
-    private void initRightRadius(){
-        Log.d("myLog", "initRightRadius = " +radiusL);
+    private void calculateAngleSpeed() {
+        int degreesRotate = 180 * maxSpeed / 100; //depends of max speed
+        angleSpeed = degreesRotate * currentSpeed / maxSpeed;
+        Log.d("myLog", "angleSpeed = " + angleSpeed);
+    }
+
+
+    private void initRightRadius() {
+        Log.d("myLog", "initRightRadius = " + radiusL);
         if (getWidth() < getHeight()) {
             width = getWidth();
             height = getHeight();
@@ -186,7 +236,7 @@ public class SpeedometerView extends View {
         Log.d("myLog", "initRightRadius = " + radiusL);
     }
 
-    private void fillBackgroundColor(Canvas canvas){
+    private void fillBackgroundColor(Canvas canvas) {
         // draw backgroundColor
         rectF.set(center_x - radiusL, center_y - radiusL, center_x + radiusL, center_y + radiusL);
         paint.setColor(background);
@@ -194,7 +244,7 @@ public class SpeedometerView extends View {
         canvas.drawArc(rectF, 180, 180, true, paint);
     }
 
-    private void drawMainBorder(Canvas canvas){
+    private void drawMainBorder(Canvas canvas) {
         // draw BigArc
         paint.setColor(colorMainBoder);
         paint.setStrokeWidth(10);
@@ -216,7 +266,8 @@ public class SpeedometerView extends View {
         }
     }
 
-    private void drawSpeedArc(Canvas canvas){
+    private void drawSpeedArc(Canvas canvas) {
+        paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(radiusS);
         rectF.set(center_x - radiusM, center_y - radiusM, center_x + radiusM, center_y + radiusM);
         // draw AfterSpeedLine
@@ -224,15 +275,16 @@ public class SpeedometerView extends View {
         canvas.drawArc(rectF, 180 + angleSpeed, 180 - angleSpeed, false, paint);
         // draw BeforeSpeedLine
         paint.setColor(colorBeforeSpeedLine);
-        canvas.drawArc(rectF, 180 , angleSpeed, false, paint);
+        canvas.drawArc(rectF, 180, angleSpeed, false, paint);
+
     }
 
-    private void drawDigitsForSpeed(Canvas canvas){
+    private void drawDigitsForSpeed(Canvas canvas) {
         //draw numbers for speed
         paint.reset();
         paint.setColor(digitsColor);
         paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
-        paint.setTextSize(radiusL/9);
+        paint.setTextSize(radiusL / 9);
         double hip = 3.1 * radiusL / 4;
         for (int i = 1; i <= 9; i++) {
             float x_cat = (int) (hip * Math.cos(i * Math.PI / 10));
@@ -253,28 +305,29 @@ public class SpeedometerView extends View {
         Log.d("myLog", "center_y= " + center_y);
     }
 
-    private void drawSpeedArrow(Canvas canvas){
+    private void drawSpeedArrow(Canvas canvas) {
         // draw SpeedLineArrow
         rectF.set(center_x - radiusS, center_y - radiusS, center_x + radiusS, center_y + radiusS);
         paint.setStyle(Paint.Style.FILL);
         paint.setColor(colorSpeedLine);
         canvas.drawArc(rectF, 180, 180, true, paint);
+        path_arrow.reset();
 
-        paint.setStrokeWidth(10);
+        paint.setStrokeWidth(20);
         path_arrow.moveTo(center_x, center_y);
-        path_arrow.lineTo(center_x + radiusS / 2, center_y);
+        path_arrow.lineTo(center_x - 2 * radiusS / 5, center_y);
+        path_arrow.lineTo(center_x - radiusS / 5, center_y - radiusSpeedArrow) ;
         path_arrow.lineTo(center_x + radiusS / 5, center_y - radiusSpeedArrow);
-        path_arrow.lineTo(center_x - radiusS / 5, center_y - radiusSpeedArrow);
-        path_arrow.lineTo(center_x, center_y);
-
+        path_arrow.lineTo(center_x  + 2 * radiusS / 5, center_y);
 
         matrix.reset();
-        matrix.setTranslate(0, 0);
+        matrix.setTranslate(center_x, center_y);
         Log.d("myLog", "setTranslate angleSpeed= " + angleSpeed);
-        matrix.postRotate(angleSpeed - 90, center_x, center_y);
+        matrix.setRotate(angleSpeed - 90, center_x, center_y);
         path_arrow.transform(matrix);
         canvas.drawPath(path_arrow, paint);
-        // invalidate();
+
+        invalidate();
     }
 
 }
