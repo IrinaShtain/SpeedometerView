@@ -21,7 +21,7 @@
         app:backgroundColor="@color/grey"
         app:colorSpeedLine="@color/black"
         app:maxSpeed="100"
-        app:currentSpeed="10"
+        app:currentSpeed="100"
        />
 
 </android.support.constraint.ConstraintLayout>

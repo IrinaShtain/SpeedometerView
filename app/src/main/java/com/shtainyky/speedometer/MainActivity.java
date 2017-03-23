@@ -22,6 +22,7 @@ public class MainActivity extends AppCompatActivity {
                         e.printStackTrace();
                     }
                 }
+                speedometerView.setRadiusSpeedArrow(500);
             }
         }).start();
 

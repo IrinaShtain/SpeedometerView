@@ -36,7 +36,7 @@ public class SpeedometerView extends View {
     private static final int DEFAULT_SPEED_LINE_RADIUS = 0;
     private static final int DEFAULT_INNER_RADIUS = 0;
 
-    private int background;
+    private int backgroundColor;
     private int digitsColor;
     private int colorMainBoder;
     private int colorBeforeSpeedLine;
@@ -50,6 +50,7 @@ public class SpeedometerView extends View {
     private int currentSpeed;
     private int maxSpeed;
     private int angleSpeed;
+
     int width;
     int height;
     int center_x;
@@ -71,7 +72,7 @@ public class SpeedometerView extends View {
         Log.d("myLog", "SpeedometerView Constructor");
 
 
-        background = ContextCompat.getColor(mContext, DEFAULT_BACKGROUND_COLOR);
+        backgroundColor = ContextCompat.getColor(mContext, DEFAULT_BACKGROUND_COLOR);
         digitsColor = ContextCompat.getColor(mContext, DEFAULT_DIGITS_COLOR);
         colorMainBoder = ContextCompat.getColor(mContext, DEFAULT_MAIN_BORDER_COLOR);
         colorBeforeSpeedLine = ContextCompat.getColor(mContext, DEFAULT_BEFORE_SPEED_LINE_COLOR);
@@ -98,7 +99,7 @@ public class SpeedometerView extends View {
             maxSpeed = attributes.getInteger(R.styleable.SpeedometerView_maxSpeed, DEFAULT_MAX_SPEED);
             currentSpeed = attributes.getInteger(R.styleable.SpeedometerView_currentSpeed, DEFAULT_CURRENT_SPEED);
 
-            background = attributes.getColor(R.styleable.SpeedometerView_backgroundColor, 0);
+            backgroundColor = attributes.getColor(R.styleable.SpeedometerView_backgroundColor, 0);
             digitsColor = attributes.getColor(R.styleable.SpeedometerView_digitsColor, 0);
             colorBeforeSpeedLine = attributes.getColor(R.styleable.SpeedometerView_colorBeforeSpeedLine, 0);
             colorAfterSpeedLine = attributes.getColor(R.styleable.SpeedometerView_colorAfterSpeedLine, 0);
@@ -118,21 +119,6 @@ public class SpeedometerView extends View {
         matrix = new Matrix();
         bounds = new Rect();
         b = BitmapFactory.decodeResource(getResources(), R.drawable.ic_oil);
-    }
-
-    public float getCurrentSpeed() {
-        return currentSpeed;
-    }
-
-    public void setCurrentSpeed(int currentSpeed) {
-        if (currentSpeed > this.maxSpeed)
-            this.currentSpeed = maxSpeed;
-        else if (currentSpeed < 0)
-            this.currentSpeed = 0;
-        else
-            this.currentSpeed = currentSpeed;
-        invalidate();
-
     }
 
     @Override
@@ -229,7 +215,7 @@ public class SpeedometerView extends View {
         if ((radiusM <= 0) || (radiusM > radiusL)) {
             radiusM = width / 4;
         }
-        if ((radiusSpeedArrow <= 0) || (radiusS > radiusM)) {
+        if ((radiusSpeedArrow <= 0) || (radiusSpeedArrow > radiusL)) {
             radiusSpeedArrow = 3 * radiusL / 4;
         }
         radiusS = radiusL / 8;
@@ -239,7 +225,7 @@ public class SpeedometerView extends View {
     private void fillBackgroundColor(Canvas canvas) {
         // draw backgroundColor
         rectF.set(center_x - radiusL, center_y - radiusL, center_x + radiusL, center_y + radiusL);
-        paint.setColor(background);
+        paint.setColor(backgroundColor);
         paint.setStyle(Paint.Style.FILL);
         canvas.drawArc(rectF, 180, 180, true, paint);
     }
@@ -250,7 +236,9 @@ public class SpeedometerView extends View {
         paint.setStrokeWidth(10);
         paint.setStyle(Paint.Style.STROKE);
         canvas.drawArc(rectF, 180, 180, false, paint);
+        canvas.drawLine(center_x - radiusL, center_y, center_x + radiusL, center_y, paint);
         // draw line for number of speed
+        path.reset();
         path.addRect(0, 2 * 10, 2, 0, Path.Direction.CW);
         int step = 180 / 10;
         matrix.reset();
@@ -312,13 +300,13 @@ public class SpeedometerView extends View {
         paint.setColor(colorSpeedLine);
         canvas.drawArc(rectF, 180, 180, true, paint);
         path_arrow.reset();
-
-        paint.setStrokeWidth(20);
+        paint.setStyle(Paint.Style.FILL_AND_STROKE);
+        paint.setStrokeWidth(10);
         path_arrow.moveTo(center_x, center_y);
-        path_arrow.lineTo(center_x - 2 * radiusS / 5, center_y);
-        path_arrow.lineTo(center_x - radiusS / 5, center_y - radiusSpeedArrow) ;
-        path_arrow.lineTo(center_x + radiusS / 5, center_y - radiusSpeedArrow);
-        path_arrow.lineTo(center_x  + 2 * radiusS / 5, center_y);
+        path_arrow.lineTo(center_x - 2 * radiusS / 10, center_y);
+        path_arrow.lineTo(center_x - radiusS / 10, center_y - radiusSpeedArrow) ;
+        path_arrow.lineTo(center_x + radiusS / 10, center_y - radiusSpeedArrow);
+        path_arrow.lineTo(center_x  + 2 * radiusS / 10, center_y);
 
         matrix.reset();
         matrix.setTranslate(center_x, center_y);
@@ -329,5 +317,122 @@ public class SpeedometerView extends View {
 
         invalidate();
     }
+
+/////////////////////////************************************************////////////////////////////////////
+    public float getCurrentSpeed() {
+        return currentSpeed;
+    }
+
+    public void setCurrentSpeed(int currentSpeed) {
+        if (currentSpeed > this.maxSpeed)
+            this.currentSpeed = maxSpeed;
+        else if (currentSpeed < 0)
+            this.currentSpeed = 0;
+        else
+            this.currentSpeed = currentSpeed;
+        invalidate();
+
+    }
+
+    public int getMaxSpeed() {
+        return maxSpeed;
+    }
+
+    public void setMaxSpeed(int maxSpeed) {
+        this.maxSpeed = maxSpeed;
+        invalidate();
+    }
+
+    public int getRadiusSpeedArc() {
+        return radiusM;
+    }
+
+    public void setRadiusSpeedArc(int radius) {
+        if ((radius <= 0) || (radius > radiusL)) {
+            radius = width / 4;
+        }
+        this.radiusM = radius;
+        invalidate();
+    }
+
+    public int getRadiusMainBorder() {
+        return radiusL;
+    }
+
+    public void setRadiusMainBorder(int radius) {
+        if ((radius <= 0) || (radius > width / 2)) {
+            radius = width / 2;
+        }
+        this.radiusL = radius;
+        invalidate();
+    }
+
+    public int getRadiusSpeedArrow() {
+        return radiusSpeedArrow;
+    }
+
+    public void setRadiusSpeedArrow(int radiusSpeedArrow) {
+        if ((radiusSpeedArrow <= 0) || (radiusSpeedArrow > radiusL)) {
+            radiusSpeedArrow = 3 * radiusL / 4;
+        }
+        this.radiusSpeedArrow = radiusSpeedArrow;
+        invalidate();
+    }
+
+    public int getBackgroundColor() {
+        return backgroundColor;
+    }
+
+    public void setBackground(int backgroundColor) {
+        this.backgroundColor = backgroundColor;
+        invalidate();
+    }
+
+    public int getDigitsColor() {
+        return digitsColor;
+    }
+
+    public void setDigitsColor(int digitsColor) {
+        this.digitsColor = digitsColor;
+        invalidate();
+    }
+
+    public int getColorMainBorder() {
+        return colorMainBoder;
+    }
+
+    public void setColorMainBorder(int colorMainBoder) {
+        this.colorMainBoder = colorMainBoder;
+        invalidate();
+    }
+
+    public int getColorBeforeSpeedLine() {
+        return colorBeforeSpeedLine;
+    }
+
+    public void setColorBeforeSpeedLine(int colorBeforeSpeedLine) {
+        this.colorBeforeSpeedLine = colorBeforeSpeedLine;
+        invalidate();
+    }
+
+    public int getColorAfterSpeedLine() {
+        return colorAfterSpeedLine;
+    }
+
+    public void setColorAfterSpeedLine(int colorAfterSpeedLine) {
+        this.colorAfterSpeedLine = colorAfterSpeedLine;
+        invalidate();
+    }
+
+    public int getColorSpeedLine() {
+        return colorSpeedLine;
+    }
+
+    public void setColorSpeedLine(int colorSpeedLine) {
+        this.colorSpeedLine = colorSpeedLine;
+        invalidate();
+    }
+
+
 
 }
