@@ -6,13 +6,14 @@ import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Typeface;
+import android.os.Handler;
+import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
@@ -21,6 +22,8 @@ import android.view.View;
 
 public class SpeedometerView extends View {
 
+    private static final int MSG_SEND_DATA = 0;
+    private static final long DELAY_INTERVAl = 1000 / 24;
     private Context mContext;
 
     private static final int DEFAULT_BACKGROUND_COLOR = R.color.grey;
@@ -35,10 +38,11 @@ public class SpeedometerView extends View {
     private static final int DEFAULT_OUTER_RADIUS = 0;
     private static final int DEFAULT_SPEED_LINE_RADIUS = 0;
     private static final int DEFAULT_INNER_RADIUS = 0;
+    private static final float DEFAULT_COEFFICIENT = 0.05f;
 
     private int backgroundColor;
     private int digitsColor;
-    private int colorMainBoder;
+    private int colorMainBorder;
     private int colorBeforeSpeedLine;
     private int colorAfterSpeedLine;
     private int colorSpeedLine;
@@ -47,9 +51,14 @@ public class SpeedometerView extends View {
     private int radiusS;
     private int radiusL;
     private int radiusSpeedArrow;
-    private int currentSpeed;
+    private float currentSpeed;
     private int maxSpeed;
     private int angleSpeed;
+    private OnSpeedChangedListener mOnSpeedChangedListener;
+    private float currentCoefficient;
+
+    private boolean isGasPressed;
+    private boolean isBrakePressed;
 
     int width;
     int height;
@@ -65,16 +74,32 @@ public class SpeedometerView extends View {
     Rect bounds;
     Bitmap b;
 
+    private final Handler handler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            if (msg.what == MSG_SEND_DATA) {
+                invalidate();
+                sendEmptyMessageDelayed(MSG_SEND_DATA, DELAY_INTERVAl);
+                if (mOnSpeedChangedListener != null)
+                    mOnSpeedChangedListener.onSpeedChanged((int) currentSpeed);
+            }
+        }
+    };
+
+    private void sendSpeed() {
+        handler.removeMessages(MSG_SEND_DATA);
+        handler.sendEmptyMessage(MSG_SEND_DATA);
+    }
+
     public SpeedometerView(Context context) {
         super(context);
         mContext = context;
         initialization();
         Log.d("myLog", "SpeedometerView Constructor");
-
-
         backgroundColor = ContextCompat.getColor(mContext, DEFAULT_BACKGROUND_COLOR);
         digitsColor = ContextCompat.getColor(mContext, DEFAULT_DIGITS_COLOR);
-        colorMainBoder = ContextCompat.getColor(mContext, DEFAULT_MAIN_BORDER_COLOR);
+        colorMainBorder = ContextCompat.getColor(mContext, DEFAULT_MAIN_BORDER_COLOR);
         colorBeforeSpeedLine = ContextCompat.getColor(mContext, DEFAULT_BEFORE_SPEED_LINE_COLOR);
         colorAfterSpeedLine = ContextCompat.getColor(mContext, DEFAULT_AFTER_SPEED_LINE_COLOR);
         colorSpeedLine = ContextCompat.getColor(mContext, DEFAULT_SPEED_LINE_COLOR);
@@ -104,7 +129,7 @@ public class SpeedometerView extends View {
             colorBeforeSpeedLine = attributes.getColor(R.styleable.SpeedometerView_colorBeforeSpeedLine, 0);
             colorAfterSpeedLine = attributes.getColor(R.styleable.SpeedometerView_colorAfterSpeedLine, 0);
             colorSpeedLine = attributes.getColor(R.styleable.SpeedometerView_colorSpeedLine, 0);
-            colorMainBoder = attributes.getColor(R.styleable.SpeedometerView_colorMainBoder, 0);
+            colorMainBorder = attributes.getColor(R.styleable.SpeedometerView_colorMainBoder, 0);
 
         } finally {
             attributes.recycle();
@@ -172,7 +197,8 @@ public class SpeedometerView extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
-        Log.d("myLog", "SpeedometerView onDraw");
+        //  Log.d("myLog", "SpeedometerView onDraw");
+        updateCurrentSpeed();
         fillBackgroundColor(canvas);
         drawMainBorder(canvas);
         drawDigitsForSpeed(canvas);
@@ -189,13 +215,13 @@ public class SpeedometerView extends View {
 
     private void calculateAngleSpeed() {
         int degreesRotate = 180 * maxSpeed / 100; //depends of max speed
-        angleSpeed = degreesRotate * currentSpeed / maxSpeed;
-        Log.d("myLog", "angleSpeed = " + angleSpeed);
+        angleSpeed = (int) (degreesRotate * currentSpeed / maxSpeed);
+        //  Log.d("myLog", "angleSpeed = " + angleSpeed);
     }
 
 
     private void initRightRadius() {
-        Log.d("myLog", "initRightRadius = " + radiusL);
+        //  Log.d("myLog", "initRightRadius = " + radiusL);
         if (getWidth() < getHeight()) {
             width = getWidth();
             height = getHeight();
@@ -208,7 +234,7 @@ public class SpeedometerView extends View {
             center_y = width / 2 + width / 4;
             width = 7 * getHeight() / 4;
         }
-        Log.d("myLog", "width = " + width);
+        //  Log.d("myLog", "width = " + width);
         if ((radiusL <= 0) || (radiusL > width / 2)) {
             radiusL = width / 2;
         }
@@ -219,7 +245,7 @@ public class SpeedometerView extends View {
             radiusSpeedArrow = 3 * radiusL / 4;
         }
         radiusS = radiusL / 8;
-        Log.d("myLog", "initRightRadius = " + radiusL);
+        //  Log.d("myLog", "initRightRadius = " + radiusL);
     }
 
     private void fillBackgroundColor(Canvas canvas) {
@@ -232,7 +258,7 @@ public class SpeedometerView extends View {
 
     private void drawMainBorder(Canvas canvas) {
         // draw BigArc
-        paint.setColor(colorMainBoder);
+        paint.setColor(colorMainBorder);
         paint.setStrokeWidth(10);
         paint.setStyle(Paint.Style.STROKE);
         canvas.drawArc(rectF, 180, 180, false, paint);
@@ -289,8 +315,8 @@ public class SpeedometerView extends View {
             }
 
         }
-        Log.d("myLog", "center_x= " + center_x);
-        Log.d("myLog", "center_y= " + center_y);
+//        Log.d("myLog", "center_x= " + center_x);
+//        Log.d("myLog", "center_y= " + center_y);
     }
 
     private void drawSpeedArrow(Canvas canvas) {
@@ -304,13 +330,12 @@ public class SpeedometerView extends View {
         paint.setStrokeWidth(10);
         path_arrow.moveTo(center_x, center_y);
         path_arrow.lineTo(center_x - 2 * radiusS / 10, center_y);
-        path_arrow.lineTo(center_x - radiusS / 10, center_y - radiusSpeedArrow) ;
+        path_arrow.lineTo(center_x - radiusS / 10, center_y - radiusSpeedArrow);
         path_arrow.lineTo(center_x + radiusS / 10, center_y - radiusSpeedArrow);
-        path_arrow.lineTo(center_x  + 2 * radiusS / 10, center_y);
+        path_arrow.lineTo(center_x + 2 * radiusS / 10, center_y);
 
         matrix.reset();
         matrix.setTranslate(center_x, center_y);
-        Log.d("myLog", "setTranslate angleSpeed= " + angleSpeed);
         matrix.setRotate(angleSpeed - 90, center_x, center_y);
         path_arrow.transform(matrix);
         canvas.drawPath(path_arrow, paint);
@@ -318,7 +343,60 @@ public class SpeedometerView extends View {
         invalidate();
     }
 
-/////////////////////////************************************************////////////////////////////////////
+    /////////////////////////**************************************////////////////////////////////////
+
+    public void pressGas() {
+        if (isBrakePressed) isBrakePressed = false;
+        isGasPressed = true;
+        currentCoefficient = 8 * DEFAULT_COEFFICIENT;
+        sendSpeed();
+    }
+
+    public void releaseGas() {
+        isGasPressed = false;
+        if (!isBrakePressed) {
+            relax();
+            sendSpeed();
+        }
+
+    }
+
+    public void pressBrake() {
+        if (isGasPressed) isGasPressed = false;
+        isBrakePressed = true;
+        currentCoefficient = -20 * DEFAULT_COEFFICIENT;
+        sendSpeed();
+    }
+
+    public void releaseBrake() {
+        if (isBrakePressed) {
+            isBrakePressed = false;
+            relax();
+            sendSpeed();
+        }
+    }
+
+    private void relax() {
+        currentCoefficient = -2 * DEFAULT_COEFFICIENT;
+    }
+
+
+    private void updateCurrentSpeed() {
+        if (currentCoefficient > 0) {
+            if (currentSpeed < maxSpeed && currentSpeed >= 0) {
+                currentSpeed = currentSpeed + currentCoefficient;
+            } else
+                currentSpeed = maxSpeed;
+        } else {
+            if (currentSpeed <= maxSpeed && currentSpeed > 0) {
+                currentSpeed = currentSpeed + currentCoefficient;
+            } else
+                currentSpeed = 0;
+        }
+
+    }
+
+    /////////////////////////************************************************////////////////////////////////////
     public float getCurrentSpeed() {
         return currentSpeed;
     }
@@ -398,11 +476,11 @@ public class SpeedometerView extends View {
     }
 
     public int getColorMainBorder() {
-        return colorMainBoder;
+        return colorMainBorder;
     }
 
     public void setColorMainBorder(int colorMainBoder) {
-        this.colorMainBoder = colorMainBoder;
+        this.colorMainBorder = colorMainBoder;
         invalidate();
     }
 
@@ -433,6 +511,11 @@ public class SpeedometerView extends View {
         invalidate();
     }
 
+    public interface OnSpeedChangedListener {
+        void onSpeedChanged(int value);
+    }
 
-
+    public void setOnSpeedChangedListener(OnSpeedChangedListener onSpeedChangedListener) {
+        mOnSpeedChangedListener = onSpeedChangedListener;
+    }
 }

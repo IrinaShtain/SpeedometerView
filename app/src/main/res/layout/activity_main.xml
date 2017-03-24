@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout
+<RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -15,13 +15,56 @@
         app:innerSectorRadius="150"
         app:colorAfterSpeedLine="@color/colorPrimary"
         app:colorBeforeSpeedLine="@color/colorAccent"
-        app:speedArrowRadius="250"
+        app:speedArrowRadius="450"
         app:colorMainBoder="@color/black"
         app:digitsColor="@android:color/black"
         app:backgroundColor="@color/grey"
         app:colorSpeedLine="@color/black"
-        app:maxSpeed="100"
-        app:currentSpeed="100"
+        app:maxSpeed="80"
+        app:currentSpeed="0"
        />
+    <LinearLayout
+        android:id="@+id/ll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_below="@+id/speedometer">
 
-</android.support.constraint.ConstraintLayout>
+        <Button
+            android:id="@+id/buttonGas"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Gas"/>
+
+        <Button
+            android:id="@+id/btStop"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="release Gas"/>
+        <Button
+            android:id="@+id/btRelax"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Brake"/>
+        <Button
+            android:id="@+id/btBrakeStop"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="press Brake"/>
+
+    </LinearLayout>
+    <TextView
+        android:id="@+id/speed"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/ll"
+        android:text="SPEED"
+        android:gravity="center"
+        android:textStyle="bold"
+        android:textColor="@color/colorAccent"
+        android:textSize="25sp"/>
+
+
+
+
+</RelativeLayout>
